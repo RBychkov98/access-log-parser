@@ -1,28 +1,10 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import java.io.*;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-
-        System.out.println("Введите первое число:");
-        int firstNumber = new Scanner(System.in).nextInt();
-        System.out.println("Введите второе число:");
-        int secondNumber = new Scanner(System.in).nextInt();
-
-        int sum = firstNumber + secondNumber;
-        int diff = firstNumber - secondNumber;
-        int prod = firstNumber * secondNumber;
-        double quotient = (double) firstNumber / secondNumber;
-
-        System.out.println("Сумма: "+sum);
-        System.out.println("Разность: "+diff);
-        System.out.println("Произведение: "+prod);
-        System.out.println("Частное: "+quotient);
-
 
         int count=0;
 
@@ -33,6 +15,11 @@ public class Main {
             boolean fileExists = file.exists();
             boolean isDirecory = file.isDirectory();
             ArrayList<Integer> lengths = new ArrayList<Integer>();
+            ArrayList<String> userAgents = new ArrayList<String>();
+            ArrayList<String> partsWithSearchBots = new ArrayList<String>();
+            ArrayList<String> searchBots = new ArrayList<String>();
+            int countOfYandexBots = 0;
+            int countOfGooglebots = 0;
 
             if (!fileExists || isDirecory ) {
                 System.out.println("Указанный файл не существует или указанный путь является путём к папке");
@@ -44,23 +31,81 @@ public class Main {
             }
 
             try {
-                FileReader fileReader = new FileReader(path);
-                BufferedReader reader =
-                        new BufferedReader(fileReader);
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    int length = line.length();
-                    if (length > 1024) throw new RuntimeException("В файле имеется строка длиннее 1024 символа. Таких длинных строк в файле быть не должно.");
-                    lengths.add(length);
+                countReqAndTakeUserAgents(path, lengths, userAgents);
+
+                findPartsWithSearchBotsInUA( userAgents, partsWithSearchBots);
+
+                FindSearchBots(partsWithSearchBots, searchBots);
+
+                for (String bot : searchBots) {
+                    if (bot.contains("YandexBot")) {
+                        countOfYandexBots += 1;
+                    }
+                    if (bot.contains("Googlebot")) {
+                        countOfGooglebots += 1;
+                    }
                 }
-                System.out.println("Общее колличество строк в файле: " + lengths.size());
-                System.out.println("Длинна самой длинной строки в файле: " + Collections.max(lengths));
-                System.out.println("Длинна самой короткой строки в файле: " + Collections.min(lengths));
+
+                countPercents(lengths.size(), countOfYandexBots, countOfGooglebots);
+
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
+    }
 
+    private static void countReqAndTakeUserAgents(String path, ArrayList<Integer> lengths, ArrayList<String> userAgents) throws IOException {
+        FileReader fileReader = new FileReader(path);
+        BufferedReader reader =
+                new BufferedReader(fileReader);
+        String line;
+        while ((line = reader.readLine()) != null) {
+            int length = line.length();
+            if (length > 1024) throw new RuntimeException("В файле имеется строка длиннее 1024 символа. Таких длинных строк в файле быть не должно.");
+            lengths.add(length);
+            if (line.contains("Mozilla")) {
+                String userData = line.substring(line.indexOf("Mozilla"));
+                userAgents.add(userData);
+            }
+        }
+        System.out.println("Общее колличество строк в файле: " + lengths.size());
+    }
+
+    private static void findPartsWithSearchBotsInUA(ArrayList<String> userAgents, ArrayList<String> partsWithSearchBots) {
+        for (String uA : userAgents) {
+            try {
+                String searchBot = uA.substring(uA.indexOf(' ') + 1, uA.indexOf(')') + 1);
+                if (searchBot.charAt(0) == '(') partsWithSearchBots.add(searchBot.substring(1, searchBot.indexOf(')')));
+            } catch (StringIndexOutOfBoundsException _) {
+
+            }
+        }
+    }
+
+    public static void FindSearchBots(ArrayList<String> partsWithSearchBots, ArrayList<String> searchBots) {
+        for (String part : partsWithSearchBots) {
+            String[] parts = part.split(";");
+            ArrayList<String> fractionsOfPart = new ArrayList<String>();
+            for (String p : parts) {
+                fractionsOfPart.add(p.trim());
+            }
+            if (fractionsOfPart.size() >= 2) {
+                String searchBot = fractionsOfPart.get(1);
+                if (searchBot.contains("/"))  {
+                    searchBots.add(searchBot.substring(0, searchBot.indexOf('/')));
+                } else searchBots.add(searchBot);
+            }
+        }
+    }
+
+    private static void countPercents(int lengths, int countOfYandexBots, int countOfGooglebots) {
+        double onePercent = (double) lengths /100;
+        DecimalFormat df = new DecimalFormat("#.##");
+        double percentOfYandexBotRequests = countOfYandexBots/onePercent;
+        double percentOfGoogleBotRequests = countOfGooglebots/onePercent;
+
+        System.out.println("Процент запросов Яндекс бота от общего колличества запросов - " + df.format(percentOfYandexBotRequests) + '%');
+        System.out.println("Процент запросов Google бота от общего колличества запросов - " + df.format(percentOfGoogleBotRequests) + '%');
     }
 }
 
