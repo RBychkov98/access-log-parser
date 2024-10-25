@@ -20,6 +20,7 @@ public class Main {
             ArrayList<String> searchBots = new ArrayList<String>();
             int countOfYandexBots = 0;
             int countOfGooglebots = 0;
+            Statistics stat = new Statistics();
 
             if (!fileExists || isDirecory ) {
                 System.out.println("Указанный файл не существует или указанный путь является путём к папке");
@@ -31,7 +32,7 @@ public class Main {
             }
 
             try {
-                countReqAndTakeUserAgents(path, lengths, userAgents);
+                countReqAndTakeUserAgents(path, lengths, userAgents, stat);
 
                 findPartsWithSearchBotsInUA( userAgents, partsWithSearchBots);
 
@@ -48,18 +49,22 @@ public class Main {
 
                 countPercents(lengths.size(), countOfYandexBots, countOfGooglebots);
 
+                stat.getTrafficRate();
+
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
     }
 
-    private static void countReqAndTakeUserAgents(String path, ArrayList<Integer> lengths, ArrayList<String> userAgents) throws IOException {
+    private static void countReqAndTakeUserAgents(String path, ArrayList<Integer> lengths, ArrayList<String> userAgents, Statistics stat) throws IOException {
         FileReader fileReader = new FileReader(path);
         BufferedReader reader =
                 new BufferedReader(fileReader);
         String line;
         while ((line = reader.readLine()) != null) {
+            LogEntry lEnt = new LogEntry(line);
+            stat.addEntry(lEnt);
             int length = line.length();
             if (length > 1024) throw new RuntimeException("В файле имеется строка длиннее 1024 символа. Таких длинных строк в файле быть не должно.");
             lengths.add(length);
