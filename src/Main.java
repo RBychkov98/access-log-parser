@@ -51,6 +51,10 @@ public class Main {
 
                 stat.getTrafficRate();
 
+                stat.calcSharesOfOpSystems();
+
+                stat.calcSharesOfOpBrowsers();
+
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -64,6 +68,7 @@ public class Main {
         String line;
         while ((line = reader.readLine()) != null) {
             LogEntry lEnt = new LogEntry(line);
+            System.out.println(lEnt);
             stat.addEntry(lEnt);
             int length = line.length();
             if (length > 1024) throw new RuntimeException("В файле имеется строка длиннее 1024 символа. Таких длинных строк в файле быть не должно.");

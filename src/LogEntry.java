@@ -12,7 +12,8 @@ public class LogEntry {
     private final int codeOfAnswer;
     private final int weightOfData;
     private final String referer;
-    private final String userAgent;
+    private final String userAgentString;
+    private UserAgent userAgent;
 
 
 
@@ -31,21 +32,23 @@ public class LogEntry {
         this.codeOfAnswer = Integer.parseInt(line.substring(indexOfSpaces.get(7) + 1, indexOfSpaces.get(8)));
         this.weightOfData = Integer.parseInt(line.substring(indexOfSpaces.get(8) + 1, indexOfSpaces.get(9)));
         this.referer = line.substring(indexOfSpaces.get(9) + 2, indexOfSpaces.get(10) - 1);
-        this.userAgent = line.substring(indexOfSpaces.get(10) + 2);
+        this.userAgentString = line.substring(indexOfSpaces.get(10) + 2);
 
-        UserAgent uA = new UserAgent(userAgent);
+        this.userAgent = new UserAgent(userAgentString);
     }
 
     @Override
     public String toString() {
-        return "LogEntry{ipAdress='" + ipAdress + '\'' +
-                ", dateAndTime='" + time + '\'' +
+        return "LogEntry{" +
+                "ipAdress='" + ipAdress + '\'' +
+                ", time=" + time +
                 ", method='" + method + '\'' +
                 ", reqPath='" + reqPath + '\'' +
                 ", codeOfAnswer=" + codeOfAnswer +
                 ", weightOfData=" + weightOfData +
                 ", referer='" + referer + '\'' +
-                ", userAgent='" + userAgent + '\'' +
+                ", userAgentString='" + userAgentString + '\'' +
+                ", userAgent=" + userAgent +
                 '}';
     }
 
@@ -77,7 +80,11 @@ public class LogEntry {
         return referer;
     }
 
-    public String getUserAgent() {
+    public String getUserAgentString() {
+        return userAgentString;
+    }
+
+    public UserAgent getUserAgent() {
         return userAgent;
     }
 }
