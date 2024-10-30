@@ -11,12 +11,16 @@ public class Statistics {
     private LocalDateTime maxTime;
     private HashSet<String> existingPages;
     private HashSet<String> nonExistingPages;
+    private HashSet<String> usersIp;
     private HashMap<String, Integer> opSystems;
     private int countOfSystems;
     private HashMap<String, Integer> browsers;
     private int countOfBrowsers;
     private HashMap<String, Double> sharesOfOpSystems;
     private HashMap<String, Double> sharesOfBrowsers;
+    double hoursInLogFile;
+    int visitsFromBrowsers;
+    int failedRequests;
 
     public void addEntry(LogEntry lEnt) {
         totalTraffic += lEnt.getWeightOfData();
@@ -31,6 +35,10 @@ public class Statistics {
         if(lEnt.getCodeOfAnswer() == 200) {
             existingPages.add(lEnt.getReqPath());
         } else if (lEnt.getCodeOfAnswer() == 404) nonExistingPages.add(lEnt.getReqPath());
+
+        if (String.valueOf(lEnt.getCodeOfAnswer()).substring(0, 1).equals("4") || String.valueOf(lEnt.getCodeOfAnswer()).substring(0, 1).equals("5")) {
+            failedRequests ++;
+        }
 
         if(!Objects.equals(lEnt.getUserAgent().getOsType(), "")) {
             if (opSystems.containsKey(lEnt.getUserAgent().getOsType())) {
@@ -68,6 +76,11 @@ public class Statistics {
             }
         }
 
+        if (!lEnt.getUserAgentString().contains("bot")) {
+            visitsFromBrowsers += 1;
+            usersIp.add(lEnt.getIpAdress());
+        }
+
     }
 
     public void calcSharesOfOpSystems() {
@@ -85,13 +98,31 @@ public class Statistics {
     }
 
     public void getTrafficRate() {
+        countHoursInLogFile();
+        int trafficForHour = (int) (totalTraffic / hoursInLogFile);
+        System.out.println("Объем часового траффика - " + trafficForHour);
+        System.out.println(visitsFromBrowsers);
+    }
+
+    public void AvgNumbersOfVisitsPerHour() {
+        countHoursInLogFile();
+        System.out.println("Cреднее количество посещений сайта за час - " + Math.round(visitsFromBrowsers/hoursInLogFile));
+    }
+
+    public void AvgNumbersOfFaledRequestsPerHour() {
+        countHoursInLogFile();
+        System.out.println("Cреднее количество ошибочных запросов за час - " + Math.round(failedRequests/hoursInLogFile));
+    }
+
+    public void AvgNumbersOfVisitsByOneUser() {
+        System.out.println("Cреднее количество посещений сайта одним пользователем - " + Math.round((float) visitsFromBrowsers /usersIp.size()));
+    }
+
+    public void countHoursInLogFile() {
         Duration duration = Duration.between(minTime, maxTime);
         double durHours = (double) duration.toMinutes() /60;
         double scale = Math.pow(10, 2);
-        double hours = Math.round(durHours * scale) / scale;
-
-        int trafficForHour = (int) (totalTraffic / hours);
-        System.out.println("Объем часового траффика - " + trafficForHour);
+        this.hoursInLogFile = Math.round(durHours * scale) / scale;
     }
 
     public Statistics() {
@@ -100,12 +131,16 @@ public class Statistics {
         this.maxTime = LocalDateTime.MIN;
         this.existingPages = new HashSet<>();
         this.nonExistingPages = new HashSet<>();
+        this.usersIp = new HashSet<>();
         this.opSystems = new HashMap<>();
         this.countOfSystems = 0;
         this.browsers = new HashMap<>();
         this.countOfBrowsers = 0;
         this.sharesOfOpSystems = new HashMap<>();
         this.sharesOfBrowsers = new HashMap<>();
+        this.hoursInLogFile = 0;
+        this.visitsFromBrowsers = 0;
+        this.failedRequests = 0;
     }
 
     public HashSet<String> getExistingPages() {

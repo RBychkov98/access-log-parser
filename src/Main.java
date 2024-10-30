@@ -55,6 +55,12 @@ public class Main {
 
                 stat.calcSharesOfOpBrowsers();
 
+                stat.AvgNumbersOfVisitsPerHour();
+
+                stat.AvgNumbersOfFaledRequestsPerHour();
+
+                stat.AvgNumbersOfVisitsByOneUser();
+
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
