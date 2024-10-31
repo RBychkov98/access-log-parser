@@ -1,9 +1,7 @@
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.time.format.DateTimeFormatter;
 
 public class Statistics {
     private long totalTraffic;
@@ -12,15 +10,19 @@ public class Statistics {
     private HashSet<String> existingPages;
     private HashSet<String> nonExistingPages;
     private HashSet<String> usersIp;
+    private HashSet<String> sitesWithReferers;
     private HashMap<String, Integer> opSystems;
     private int countOfSystems;
     private HashMap<String, Integer> browsers;
     private int countOfBrowsers;
     private HashMap<String, Double> sharesOfOpSystems;
     private HashMap<String, Double> sharesOfBrowsers;
+    private HashMap <LocalDateTime, Integer> seconds;
+    private HashMap <String, Integer> users;
     double hoursInLogFile;
     int visitsFromBrowsers;
     int failedRequests;
+
 
     public void addEntry(LogEntry lEnt) {
         totalTraffic += lEnt.getWeightOfData();
@@ -78,7 +80,28 @@ public class Statistics {
 
         if (!lEnt.getUserAgentString().contains("bot")) {
             visitsFromBrowsers += 1;
+
             usersIp.add(lEnt.getIpAdress());
+
+            if (seconds.containsKey(lEnt.getTime())) {
+                seconds.put(lEnt.getTime(), seconds.get(lEnt.getTime()) + 1);
+            } else {
+                seconds.put(lEnt.getTime(), 1);
+            }
+
+            if (users.containsKey(lEnt.getIpAdress())) {
+                users.put(lEnt.getIpAdress(), users.get(lEnt.getIpAdress()) + 1);
+            } else {
+                users.put(lEnt.getIpAdress(), 1);
+            }
+        }
+
+        if (!Objects.equals(lEnt.getReferer(), "-")) {
+            if (lEnt.getReferer().contains(":")) {
+                String referer = lEnt.getReferer().substring(lEnt.getReferer().indexOf('/') + 2);
+                referer = referer.substring(0, referer.indexOf('/'));
+                sitesWithReferers.add(referer);
+            } else sitesWithReferers.add(lEnt.getReferer().substring(lEnt.getReferer().indexOf('w'), lEnt.getReferer().indexOf('u') + 1));
         }
 
     }
@@ -90,7 +113,7 @@ public class Statistics {
         System.out.println("Операционные системы и их доли от общего колличества указанный в логах систем: " + sharesOfOpSystems);
     }
 
-    public void calcSharesOfOpBrowsers() {
+    public void calcSharesOfBrowsers() {
         for (Map.Entry<String, Integer> entry : browsers.entrySet()) {
             sharesOfBrowsers.put(entry.getKey(), Math.round((double)entry.getValue() / countOfBrowsers * 1000.0) / 1000.0);
         }
@@ -101,20 +124,23 @@ public class Statistics {
         countHoursInLogFile();
         int trafficForHour = (int) (totalTraffic / hoursInLogFile);
         System.out.println("Объем часового траффика - " + trafficForHour);
-        System.out.println(visitsFromBrowsers);
     }
 
-    public void AvgNumbersOfVisitsPerHour() {
+    public void getSitesWithReferers() {
+        System.out.println("Список сайтов, со страниц которых есть ссылки на текущий сайт: " + sitesWithReferers);
+    }
+
+    public void countAvgNumbersOfVisitsPerHour() {
         countHoursInLogFile();
         System.out.println("Cреднее количество посещений сайта за час - " + Math.round(visitsFromBrowsers/hoursInLogFile));
     }
 
-    public void AvgNumbersOfFaledRequestsPerHour() {
+    public void countAvgNumbersOfFaledRequestsPerHour() {
         countHoursInLogFile();
         System.out.println("Cреднее количество ошибочных запросов за час - " + Math.round(failedRequests/hoursInLogFile));
     }
 
-    public void AvgNumbersOfVisitsByOneUser() {
+    public void countAvgNumbersOfVisitsByOneUser() {
         System.out.println("Cреднее количество посещений сайта одним пользователем - " + Math.round((float) visitsFromBrowsers /usersIp.size()));
     }
 
@@ -125,6 +151,31 @@ public class Statistics {
         this.hoursInLogFile = Math.round(durHours * scale) / scale;
     }
 
+    public void getSecondOfMaxNumbersOfVisits() {
+        ArrayList<Integer> requests = new ArrayList<Integer>();
+        for (Map.Entry<LocalDateTime, Integer> entry : seconds.entrySet()) {
+            requests.add(entry.getValue());
+        }
+        Integer max = requests.stream().max(Integer::compare).get();
+
+        for (Map.Entry<LocalDateTime, Integer> entry : seconds.entrySet()) {
+            if (entry.getValue().equals(max)) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                System.out.println("Больше всего запросов в секунду было " + entry.getKey().format(formatter));
+                break;
+            }
+        }
+    }
+
+    public void getMaxNumberOfVisitsByOneUser() {
+        ArrayList<Integer> requests = new ArrayList<Integer>();
+        for (Map.Entry<String, Integer> entry : users.entrySet()) {
+            requests.add(entry.getValue());
+        }
+        Integer max = requests.stream().max(Integer::compare).get();
+        System.out.println("Максимальная посещаемость одним пользователем - " + max + " визитов");
+    }
+
     public Statistics() {
         this.totalTraffic = 0;
         this.minTime = LocalDateTime.MAX;
@@ -132,15 +183,19 @@ public class Statistics {
         this.existingPages = new HashSet<>();
         this.nonExistingPages = new HashSet<>();
         this.usersIp = new HashSet<>();
+        this.sitesWithReferers = new HashSet<>();
         this.opSystems = new HashMap<>();
         this.countOfSystems = 0;
         this.browsers = new HashMap<>();
         this.countOfBrowsers = 0;
         this.sharesOfOpSystems = new HashMap<>();
         this.sharesOfBrowsers = new HashMap<>();
+        this.seconds = new HashMap<>();
+        this.users = new HashMap<>();
         this.hoursInLogFile = 0;
         this.visitsFromBrowsers = 0;
         this.failedRequests = 0;
+
     }
 
     public HashSet<String> getExistingPages() {
@@ -159,12 +214,19 @@ public class Statistics {
                 ", maxTime=" + maxTime +
                 ", existingPages=" + existingPages +
                 ", nonExistingPages=" + nonExistingPages +
+                ", usersIp=" + usersIp +
+                ", sitesWithReferers=" + sitesWithReferers +
                 ", opSystems=" + opSystems +
                 ", countOfSystems=" + countOfSystems +
                 ", browsers=" + browsers +
                 ", countOfBrowsers=" + countOfBrowsers +
                 ", sharesOfOpSystems=" + sharesOfOpSystems +
                 ", sharesOfBrowsers=" + sharesOfBrowsers +
+                ", seconds=" + seconds +
+                ", users=" + users +
+                ", hoursInLogFile=" + hoursInLogFile +
+                ", visitsFromBrowsers=" + visitsFromBrowsers +
+                ", failedRequests=" + failedRequests +
                 '}';
     }
 }

@@ -53,13 +53,19 @@ public class Main {
 
                 stat.calcSharesOfOpSystems();
 
-                stat.calcSharesOfOpBrowsers();
+                stat.calcSharesOfBrowsers();
 
-                stat.AvgNumbersOfVisitsPerHour();
+                stat.countAvgNumbersOfVisitsPerHour();
 
-                stat.AvgNumbersOfFaledRequestsPerHour();
+                stat.countAvgNumbersOfFaledRequestsPerHour();
 
-                stat.AvgNumbersOfVisitsByOneUser();
+                stat.countAvgNumbersOfVisitsByOneUser();
+
+                stat.getSecondOfMaxNumbersOfVisits();
+
+                stat.getSitesWithReferers();
+
+                stat.getMaxNumberOfVisitsByOneUser();
 
             } catch (Exception ex) {
                 ex.printStackTrace();
